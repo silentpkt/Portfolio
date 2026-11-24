@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>System Check</title>
+<title>Friendly Node</title>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none; }
   html, body {
     width:100%; height:100%; background:#000; overflow:hidden;
     font-family: 'Courier New', monospace;
@@ -17,27 +18,101 @@
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 
+  canvas#matrix { position:absolute; inset:0; width:100%; height:100%; display:block; opacity:0.55; z-index:2; }
+
+  #stage::before {
+    content:""; position:absolute; inset:0; pointer-events:none; z-index:45;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.03) 0px,
+      rgba(255,255,255,0.03) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+
   /* ---------- START SCREEN ---------- */
   #startScreen {
-    position:absolute; inset:0; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; text-align:center; gap:18px;
-    background:#000; z-index:50;
+    position:relative; width:92%; max-width:420px; z-index:20;
+    padding:28px 22px; border-radius:12px;
+    border:1.5px solid #00ff88;
+    background: rgba(0, 15, 8, 0.88);
+    box-shadow: 0 0 25px rgba(0, 255, 136, 0.25);
+    display:flex; flex-direction:column; align-items:center; text-align:center; gap:16px;
   }
-  #startScreen h1 { color:#0f0; font-size:1.3rem; letter-spacing:1px; }
-  #startBtn {
-    background:transparent; border:2px solid #0f0; color:#0f0;
-    padding:14px 32px; font-family:inherit; font-size:1rem; border-radius:6px;
-    letter-spacing:2px; cursor:pointer;
+  #startScreen h1 {
+    font-size:1.3rem; color:#00ff88; text-shadow:0 0 10px rgba(0,255,136,0.5);
   }
-  #startBtn:active { background:#0f0; color:#000; }
+  #startScreen p {
+    font-size:0.92rem; color:#d8ffe8; line-height:1.5;
+  }
 
-  /* ---------- MATRIX RAIN ---------- */
-  canvas#matrix { position:absolute; inset:0; width:100%; height:100%; display:none; }
+  /* ---------- 10 FRIENDLY COLOR PAGES ---------- */
+  #friendlyPage {
+    --theme: #00ff88;
+    --tint: rgba(0, 255, 136, 0.14);
+    position:relative; width:92%; max-width:430px; z-index:15;
+    display:none; flex-direction:column; align-items:center; text-align:center; gap:16px;
+    padding:26px 20px; border-radius:12px;
+    border:1.5px solid var(--theme);
+    background:
+      radial-gradient(circle at 50% 25%, var(--tint) 0%, rgba(0, 0, 0, 0.9) 72%),
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 22px 22px, 22px 22px;
+    box-shadow: 0 0 26px color-mix(in srgb, var(--theme) 32%, transparent);
+    animation: pagePop 0.25s ease-out;
+  }
+  #friendlyPage.show { display:flex; }
 
-  /* ---------- MAIN PRANK SCREEN ---------- */
+  @keyframes pagePop {
+    from { opacity:0; transform: scale(0.96) translateY(6px); }
+    to { opacity:1; transform: scale(1) translateY(0); }
+  }
+
+  .badge {
+    font-size:0.78rem; letter-spacing:1.5px; padding:5px 12px; border-radius:999px;
+    border:1px solid var(--theme); color:var(--theme); background:rgba(0,0,0,0.75);
+  }
+  .friendlyTitle {
+    font-size:1.3rem; font-weight:bold; color:var(--theme);
+    text-shadow:0 0 10px color-mix(in srgb, var(--theme) 55%, transparent);
+  }
+  .friendlyMsg {
+    font-size:0.95rem; color:#eefcf3; line-height:1.55; max-width:340px;
+  }
+
+  .miniBarWrap {
+    width:100%; height:10px; border-radius:999px; overflow:hidden;
+    border:1px solid var(--theme); background:rgba(0,0,0,0.75);
+  }
+  .miniBarFill {
+    height:100%; width:0%; background:var(--theme);
+    box-shadow:0 0 10px var(--theme);
+  }
+  .timerLabel {
+    font-size:0.82rem; color:var(--theme); letter-spacing:1px;
+  }
+
+  .actionBtn {
+    background:rgba(0, 0, 0, 0.72);
+    border:2px solid var(--theme, #00ff88);
+    color:var(--theme, #00ff88);
+    padding:14px 30px; font-family:inherit; font-size:1rem; font-weight:bold;
+    letter-spacing:1.5px; border-radius:8px; cursor:pointer;
+    box-shadow:0 0 16px color-mix(in srgb, var(--theme, #00ff88) 35%, transparent);
+    transition: transform 0.12s ease, background 0.15s ease, color 0.15s ease;
+  }
+  .actionBtn:active {
+    transform:scale(0.96);
+    background:var(--theme, #00ff88);
+    color:#000;
+  }
+
+  /* ---------- 11TH STEP: ORIGINAL PRANK SCREEN ---------- */
   #prank {
     position:absolute; inset:0; display:none; flex-direction:column;
-    align-items:center; z-index:10; padding-top: max(32px, env(safe-area-inset-top));
+    align-items:center; z-index:25; padding-top: max(32px, env(safe-area-inset-top));
   }
 
   #picWrap {
@@ -90,7 +165,6 @@
 
   #pct { margin-top:8px; font-size:0.85rem; letter-spacing:1px; }
 
-  /* ---------- SCREEN GLITCH FLASH ---------- */
   .flash { animation: flashbang 0.35s steps(3) forwards; }
   @keyframes flashbang {
     0% { filter: invert(0); }
@@ -99,29 +173,50 @@
     100% { filter: invert(0); }
   }
 
-  /* ---------- REVEAL SCREEN (hacker-style, but honest) ---------- */
-  #reveal {
+  /* ---------- THANKS BUDDY HACKER SCREEN ---------- */
+  #thanksHackerScreen {
     position:absolute; inset:0; display:none; flex-direction:column;
     align-items:center; justify-content:center; text-align:center;
-    background: radial-gradient(circle at 50% 40%, #1a0000 0%, #000 70%);
-    color:#0f0; padding:8vw; gap:16px; z-index:60;
-    font-family: 'Courier New', monospace;
+    background:
+      radial-gradient(circle at 50% 40%, rgba(0, 255, 70, 0.16) 0%, rgba(0, 0, 0, 0.92) 72%),
+      linear-gradient(rgba(0, 255, 0, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 0, 0.08) 1px, transparent 1px);
+    background-size: 100% 100%, 24px 24px, 24px 24px;
+    color:#0f0; padding:8vw; gap:16px; z-index:40;
   }
-  #reveal.show { display:flex; animation: fadeIn .4s ease-out, revealGlow 1.6s ease-in-out infinite; }
-  @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
-  @keyframes revealGlow {
-    0%, 100% { box-shadow: inset 0 0 80px 10px rgba(255,0,0,0.25); }
-    50% { box-shadow: inset 0 0 140px 20px rgba(255,0,0,0.45); }
+  #thanksHackerScreen.show {
+    display:flex;
+    animation: fadeIn .35s ease-out, hackerPulse 1.4s ease-in-out infinite;
   }
-  #reveal .emoji { font-size:3.2rem; }
-  #reveal h2 { font-size:1.4rem; color:#ff3b3b; text-shadow:0 0 10px #ff3b3b; letter-spacing:1px; }
-  #reveal p { font-size:1rem; color:#9effa0; max-width:340px; }
+  @keyframes hackerPulse {
+    0%, 100% { box-shadow: inset 0 0 70px rgba(0, 255, 0, 0.25); }
+    50% { box-shadow: inset 0 0 150px rgba(0, 255, 0, 0.55); }
+  }
+  #thanksHackerScreen .emoji {
+    font-size:3.4rem;
+    animation: glitchShake .15s steps(2) infinite;
+  }
+  @keyframes glitchShake {
+    0% { transform: translate(0,0); }
+    50% { transform: translate(2px,-1px); }
+    100% { transform: translate(-2px,1px); }
+  }
+  #thanksHackerScreen h2 {
+    font-size:1.45rem; color:#ff3b3b;
+    text-shadow:0 0 12px #ff3b3b, 0 0 4px #0f0; letter-spacing:1px;
+  }
+  #thanksHackerScreen p {
+    font-size:1rem; color:#9effa0; max-width:340px; line-height:1.5;
+    text-shadow:0 0 8px rgba(0,255,0,0.6);
+  }
 
   /* ---------- FINAL BLACK SCREEN ---------- */
   #finalBlack {
-    position:absolute; inset:0; background:#000; display:none; z-index:70;
+    position:absolute; inset:0; background:#000; display:none; z-index:55;
   }
   #finalBlack.show { display:block; animation: fadeIn .5s ease-out; }
+
+  @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
 </style>
 </head>
 <body>
@@ -129,13 +224,27 @@
   <audio id="gotchaSound" src="Glitchinng.aac" preload="auto"></audio>
   <audio id="revealSound" src="Gotcha.aac" preload="auto"></audio>
 
-  <div id="startScreen">
-    <h1>⚠ TAP TO OPEN LINK ⚠</h1>
-    <button id="startBtn">OPEN</button>
-  </div>
-
   <canvas id="matrix"></canvas>
 
+  <!-- Start Screen -->
+  <div id="startScreen">
+    <h1>👋 Hey Friend!</h1>
+    <p>Tap the button below to start a smooth 10-step friendly visit.</p>
+    <button id="startBtn" class="actionBtn" style="--theme:#00ff88; --tint:rgba(0,255,136,0.14);">PRESS TO START</button>
+  </div>
+
+  <!-- 10 Auto-Advancing Friendly Pages (5s each, different colors, no sound) -->
+  <div id="friendlyPage">
+    <div id="pageBadge" class="badge">PAGE 1 / 10</div>
+    <h2 id="pageTitle" class="friendlyTitle">Warm Welcome</h2>
+    <p id="pageMsg" class="friendlyMsg">Glad you stopped by! Relax and enjoy the view.</p>
+    <div class="miniBarWrap">
+      <div id="pageBar" class="miniBarFill"></div>
+    </div>
+    <div id="pageTimer" class="timerLabel">5s</div>
+  </div>
+
+  <!-- 11th Step: Original Prank Screen -->
   <div id="prank">
     <div id="picWrap"><img src="photo.jpg" alt=""></div>
     <div id="log"></div>
@@ -143,34 +252,178 @@
     <div id="pct">0%</div>
   </div>
 
-  <div id="reveal">
-     <div class="emoji">🥷  💀</div>
-    <h2>💀Thanks Buddy for access.</h2>
+  <!-- Thanks Buddy Hacker Screen -->
+  <div id="thanksHackerScreen">
+    <div class="emoji">🥷 💀</div>
+    <h2>💀 Thanks Buddy for access.</h2>
     <p>Welcome to RpJword ,The depth of black trick.</p>
   </div>
 
+  <!-- Final Black Screen -->
   <div id="finalBlack"></div>
-
 </div>
 
 <script>
 (function(){
-  const startScreen = document.getElementById('startScreen');
+  const BACK_LOCK_MS = 20000;
+  const STEP_DURATION_MS = 5000; // Each of the 10 pages stays for 5 seconds
+
+  let lockExpiresAt = Date.now() + BACK_LOCK_MS;
+  let currentIndex = 0;
+  let onEleventhPage = false;
+  let stepInterval = null;
+  let stepTimeout = null;
+
+  let audioCtx = null;
+  const reversedBufferCache = {};
+
   const stage = document.getElementById('stage');
+  const startScreen = document.getElementById('startScreen');
+  const startBtn = document.getElementById('startBtn');
+  const friendlyPage = document.getElementById('friendlyPage');
+  const pageBadge = document.getElementById('pageBadge');
+  const pageTitle = document.getElementById('pageTitle');
+  const pageMsg = document.getElementById('pageMsg');
+  const pageBar = document.getElementById('pageBar');
+  const pageTimer = document.getElementById('pageTimer');
+
   const prank = document.getElementById('prank');
   const picWrap = document.getElementById('picWrap');
   const logEl = document.getElementById('log');
   const barInner = document.getElementById('barInner');
   const pctEl = document.getElementById('pct');
-  const revealEl = document.getElementById('reveal');
+
+  const thanksHackerScreen = document.getElementById('thanksHackerScreen');
   const finalBlack = document.getElementById('finalBlack');
   const canvas = document.getElementById('matrix');
-  const startBtn = document.getElementById('startBtn');
   const gotchaSound = document.getElementById('gotchaSound');
   const revealSound = document.getElementById('revealSound');
 
-  let matrixInterval = null;
+  const friendlyPages = [
+    { color: "#00ff88", tint: "rgba(0, 255, 136, 0.16)", title: "Warm Welcome", msg: "Glad you stopped by! Relax and enjoy the view." },
+    { color: "#00e5ff", tint: "rgba(0, 229, 255, 0.16)", title: "Fresh Breeze", msg: "Taking things easy, one calm step at a time." },
+    { color: "#ff4da6", tint: "rgba(255, 77, 166, 0.16)", title: "Bright Smile", msg: "A little positivity can turn any moment around." },
+    { color: "#ffd000", tint: "rgba(255, 208, 0, 0.16)", title: "Sunny Mood", msg: "Good energy flowing right through this page." },
+    { color: "#b366ff", tint: "rgba(179, 102, 255, 0.18)", title: "Calm Focus", msg: "No rush at all—just hang tight for a few seconds." },
+    { color: "#ff6a00", tint: "rgba(255, 106, 0, 0.18)", title: "Cozy Vibe", msg: "Halfway through our friendly little tour!" },
+    { color: "#2ee6a6", tint: "rgba(46, 230, 166, 0.16)", title: "Easy Going", msg: "Everything moving smoothly and quietly." },
+    { color: "#4da6ff", tint: "rgba(77, 166, 255, 0.16)", title: "Clear Skies", msg: "Almost at the end of these ten stops." },
+    { color: "#ff7043", tint: "rgba(255, 112, 67, 0.18)", title: "Friendly Note", msg: "Appreciate your patience—one more stop coming up!" },
+    { color: "#d4ff00", tint: "rgba(212, 255, 0, 0.18)", title: "Final Stop", msg: "Step 10 wrapping up now—get ready!" }
+  ];
 
+  function getAudioContext() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    if (!audioCtx) {
+      audioCtx = new AudioContextClass();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
+    }
+    return audioCtx;
+  }
+
+  async function buildReversedBuffer(url) {
+    if (reversedBufferCache[url]) return reversedBufferCache[url];
+    const ctx = getAudioContext();
+    if (!ctx) return null;
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const decoded = await ctx.decodeAudioData(arrayBuffer);
+    const reversed = ctx.createBuffer(
+      decoded.numberOfChannels,
+      decoded.length,
+      decoded.sampleRate
+    );
+    for (let ch = 0; ch < decoded.numberOfChannels; ch++) {
+      const sourceData = decoded.getChannelData(ch);
+      const targetData = reversed.getChannelData(ch);
+      for (let i = 0, j = sourceData.length - 1; i < sourceData.length; i++, j--) {
+        targetData[i] = sourceData[j];
+      }
+    }
+    reversedBufferCache[url] = reversed;
+    return reversed;
+  }
+
+  function playFallbackReverseSweep(ctx) {
+    const duration = 1.4;
+    const sampleRate = ctx.sampleRate;
+    const frameCount = Math.floor(duration * sampleRate);
+    const buffer = ctx.createBuffer(1, frameCount, sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < frameCount; i++) {
+      const t = i / frameCount;
+      const freq = 950 - t * 720;
+      const env = Math.sin(Math.PI * t);
+      data[i] = Math.sin(2 * Math.PI * freq * (i / sampleRate)) * env * 0.35;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.connect(ctx.destination);
+    src.start();
+  }
+
+  async function playReverseSoundOnBack() {
+    const activeAudioEl = !revealSound.paused ? revealSound : gotchaSound;
+    const srcUrl = activeAudioEl.getAttribute('src') || 'Glitchinng.aac';
+    const currentPos = Math.max(0, activeAudioEl.currentTime || 0);
+
+    gotchaSound.pause();
+    revealSound.pause();
+
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    try {
+      const reversedBuf = await buildReversedBuffer(srcUrl);
+      if (!reversedBuf) {
+        playFallbackReverseSweep(ctx);
+        return;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = reversedBuf;
+      src.connect(ctx.destination);
+      const reverseOffset = Math.min(
+        Math.max(0, reversedBuf.duration - currentPos),
+        Math.max(0, reversedBuf.duration - 0.05)
+      );
+      src.start(0, reverseOffset);
+    } catch (_) {
+      playFallbackReverseSweep(ctx);
+    }
+  }
+
+  // 20-second back-button guard + reverse sound on 11th page back
+  function armBackLock(ms = BACK_LOCK_MS) {
+    lockExpiresAt = Date.now() + ms;
+    history.pushState({ lock: true, t: Date.now() }, '', location.href);
+  }
+
+  function isBackLocked() {
+    return Date.now() < lockExpiresAt;
+  }
+
+  armBackLock(BACK_LOCK_MS);
+
+  window.addEventListener('popstate', function() {
+    if (onEleventhPage) {
+      playReverseSoundOnBack();
+    }
+    if (isBackLocked()) {
+      history.pushState({ lock: true, t: Date.now() }, '', location.href);
+    }
+  });
+
+  window.addEventListener('pageshow', function() {
+    if (isBackLocked()) {
+      history.pushState({ lock: true, t: Date.now() }, '', location.href);
+    }
+  });
+
+  // Matrix rain background
+  let matrixInterval = null;
   function startMatrix(){
     canvas.style.display = 'block';
     const ctx = canvas.getContext('2d');
@@ -182,8 +435,9 @@
     window.addEventListener('resize', resize);
     const chars = "01";
     const fontSize = 16;
-    let columns = Math.floor(canvas.width / fontSize);
-    let drops = new Array(columns).fill(1);
+    const columns = Math.floor(canvas.width / fontSize);
+    const drops = new Array(columns).fill(1);
+    if (matrixInterval) clearInterval(matrixInterval);
     matrixInterval = setInterval(() => {
       ctx.fillStyle = 'rgba(0,0,0,0.08)';
       ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -199,8 +453,52 @@
   }
 
   function stopMatrix(){
-    if (matrixInterval) clearInterval(matrixInterval);
+    if (matrixInterval) {
+      clearInterval(matrixInterval);
+      matrixInterval = null;
+    }
     canvas.style.display = 'none';
+  }
+
+  function clearStepTimers(){
+    if (stepInterval) { clearInterval(stepInterval); stepInterval = null; }
+    if (stepTimeout) { clearTimeout(stepTimeout); stepTimeout = null; }
+  }
+
+  function showFriendlyPage(index){
+    clearStepTimers();
+    currentIndex = index;
+    const item = friendlyPages[index];
+
+    friendlyPage.style.setProperty('--theme', item.color);
+    friendlyPage.style.setProperty('--tint', item.tint);
+    pageBadge.textContent = `PAGE ${index + 1} / 10`;
+    pageTitle.textContent = item.title;
+    pageMsg.textContent = item.msg;
+    pageBar.style.width = '0%';
+    pageTimer.textContent = '5s';
+
+    friendlyPage.classList.remove('show');
+    void friendlyPage.offsetWidth;
+    friendlyPage.classList.add('show');
+
+    const startTime = Date.now();
+    stepInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const pct = Math.min(100, (elapsed / STEP_DURATION_MS) * 100);
+      const leftSec = Math.max(0, Math.ceil((STEP_DURATION_MS - elapsed) / 1000));
+      pageBar.style.width = pct + '%';
+      pageTimer.textContent = `${leftSec}s`;
+    }, 50);
+
+    stepTimeout = setTimeout(() => {
+      clearStepTimers();
+      if (index < friendlyPages.length - 1) {
+        showFriendlyPage(index + 1);
+      } else {
+        openEleventhOriginalPrank();
+      }
+    }, STEP_DURATION_MS);
   }
 
   const lines = [
@@ -225,20 +523,31 @@
     requestAnimationFrame(()=> d.classList.add('on'));
   }
 
-  function runSequence(){
-    gotchaSound.play();
-    startScreen.style.display = 'none';
+  function openEleventhOriginalPrank(){
+    clearStepTimers();
+    onEleventhPage = true;
+    buildReversedBuffer('Glitchinng.aac').catch(() => {});
+    buildReversedBuffer('Gotcha.aac').catch(() => {});
+
+    friendlyPage.classList.remove('show');
     prank.style.display = 'flex';
     startMatrix();
 
+    picWrap.classList.remove('show');
+    logEl.innerHTML = '';
+    barInner.style.width = '0%';
+    pctEl.textContent = '0%';
+
+    gotchaSound.currentTime = 0;
+    gotchaSound.play().catch(() => {});
+
     setTimeout(()=> picWrap.classList.add('show'), 150);
 
-    let lineDelay = 500;
+    const lineDelay = 500;
     lines.forEach((l, i) => {
       setTimeout(()=> addLine(i), 450 + i*lineDelay);
     });
 
-    // progress bar fill over ~5.9s (bar khud 0% se 100% tak isi duration mein bharega)
     let pct = 0;
     const totalDuration = 14000;
     const stepTime = 40;
@@ -253,48 +562,38 @@
       }
     }, stepTime);
 
-    // quick flash glitch then reveal — bar khatam hone ke thori der baad
     setTimeout(()=>{
       stage.classList.add('flash');
     }, totalDuration + 700);
 
     setTimeout(()=>{
-      stopMatrix();
       stage.classList.remove('flash');
       prank.style.display = 'none';
-      revealEl.classList.add('show');
-      gotchaSound.pause();      // glitch wali audio band
-      revealSound.play();       // gotcha wali audio shuru, yahin reveal show hote hi
+      thanksHackerScreen.classList.add('show');
+      gotchaSound.pause();
+      revealSound.currentTime = 0;
+      revealSound.play().catch(() => {});
     }, totalDuration + 1100);
 
-    // reveal screen ("Gotcha") stays for ~10 seconds, then auto-fades to a plain black screen
     setTimeout(()=>{
-      revealEl.classList.remove('show');
+      onEleventhPage = false;
+      thanksHackerScreen.classList.remove('show');
+      stopMatrix();
+      revealSound.pause();
       finalBlack.classList.add('show');
-      revealSound.pause();      // black screen par audio sirf ruk jaye, dobara na baje
     }, totalDuration + 1100 + 10000);
   }
 
-  function reset(){
-    finalBlack.classList.remove('show');
-    revealEl.classList.remove('show');
-    picWrap.classList.remove('show');
-    logEl.innerHTML = '';
-    barInner.style.width = '0%';
-    pctEl.textContent = '0%';
-    gotchaSound.pause(); gotchaSound.currentTime = 0;
-    revealSound.pause(); revealSound.currentTime = 0;
-    startScreen.style.display = 'flex';
-  }
-
-    startBtn.addEventListener('click', runSequence);
-  finalBlack.addEventListener('click', reset);
-
-  history.pushState(null, '', location.href);
-  window.addEventListener('popstate', function(){
-    history.pushState(null, '', location.href);
+  startBtn.addEventListener('click', function(){
+    getAudioContext();
+    armBackLock(BACK_LOCK_MS);
+    startScreen.style.display = 'none';
+    showFriendlyPage(0);
   });
+
+  startMatrix();
 })();
 </script>
 </body>
 </html>
+
