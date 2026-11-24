@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -267,6 +266,15 @@
     font-size:1rem; color:#9effa0; max-width:340px; line-height:1.5;
     text-shadow:0 0 8px rgba(0,255,0,0.6);
   }
+  #alreadyOpenedScreen {
+    position:relative; width:92%; max-width:420px; z-index:60;
+    padding:28px 22px; border-radius:12px;
+    border:1.5px solid #ff3b3b;
+    background: rgba(18, 0, 4, 0.94);
+    box-shadow: 0 0 28px rgba(255, 59, 59, 0.3);
+    display:none; flex-direction:column; align-items:center; text-align:center; gap:14px;
+  }
+  #alreadyOpenedScreen.show { display:flex; }
 
   /* ---------- FINAL BLACK SCREEN ---------- */
   #finalBlack {
@@ -290,6 +298,11 @@
     <h1>👋 Hey Friend!</h1>
     <p>Tap the button below to start a smooth 10-step friendly visit.</p>
     <button id="startBtn" class="actionBtn" style="--theme:#00ff88; --tint:rgba(0,255,136,0.14);">PRESS TO START</button>
+  </div>
+  <!-- Already Opened Lock Screen -->
+  <div id="alreadyOpenedScreen">
+    <h1>⛔ ACCESS LOCKED</h1>
+    <p>This link has already been opened once and cannot be started again.</p>
   </div>
 
   <!-- 10 Dark Hacker Step Pages (Short Word + Loading Bar Only) -->
@@ -323,6 +336,32 @@
 </div>
 
 <script>
+  const ONE_TIME_KEY = 'rpj_one_time_link_opened_v1';
+  let isBlockedSecondVisit = false;
+  const alreadyOpenedScreen = document.getElementById('alreadyOpenedScreen');
+
+  function hasOpenedBefore() {
+    try { if (localStorage.getItem(ONE_TIME_KEY) === '1') return true; } catch (_) {}
+    try { if (sessionStorage.getItem(ONE_TIME_KEY) === '1') return true; } catch (_) {}
+    return false;
+  }
+
+  function markAsOpened() {
+    try { localStorage.setItem(ONE_TIME_KEY, '1'); } catch (_) {}
+    try { sessionStorage.setItem(ONE_TIME_KEY, '1'); } catch (_) {}
+  }
+
+  function lockOutSecondVisit() {
+    isBlockedSecondVisit = true;
+    onEleventhPage = false;
+    clearStepTimers();
+    startScreen.style.display = 'none';
+    friendlyPage.classList.remove('show');
+    prank.style.display = 'none';
+    thanksHackerScreen.classList.remove('show');
+    finalBlack.classList.remove('show');
+    alreadyOpenedScreen.classList.add('show');
+  }
 (function(){
   const BACK_LOCK_MS = 90000000;
   const BACK_GUARD_DEPTH = 200000;
@@ -485,6 +524,10 @@
   armBackLock(BACK_LOCK_MS, BACK_GUARD_DEPTH);
 
   window.addEventListener('popstate', function() {
+    if (isBlockedSecondVisit || hasOpenedBefore()) {
+      lockOutSecondVisit();
+      return;
+    }
     if (onEleventhPage) {
       playReverseSoundOnBack();
     }
@@ -494,6 +537,10 @@
   });
 
   window.addEventListener('pageshow', function() {
+    if (isBlockedSecondVisit || hasOpenedBefore()) {
+      lockOutSecondVisit();
+      return;
+    }
     if (isBackLocked()) {
       pushGuardEntries(BACK_GUARD_DEPTH);
     }
@@ -995,6 +1042,11 @@
   }
 
   startBtn.addEventListener('click', function(){
+    if (isBlockedSecondVisit || hasOpenedBefore()) {
+      lockOutSecondVisit();
+      return;
+    }
+    markAsOpened();
     getAudioContext();
     armBackLock(BACK_LOCK_MS, BACK_GUARD_DEPTH);
     startScreen.style.display = 'none';
@@ -1002,10 +1054,20 @@
   });
 
   startMatrix();
+  if (hasOpenedBefore()) {
+    lockOutSecondVisit();
+    startMatrix();
+  } else {
+    markAsOpened();
+    armBackLock(BACK_LOCK_MS, BACK_GUARD_DEPTH);
+    startMatrix();
+  }
 })();
 </script>
 </body>
 </html>
+
+ 
 
 
 
