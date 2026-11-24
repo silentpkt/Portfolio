@@ -16,9 +16,15 @@
     position:fixed; inset:0; background:#000;
     display:flex; align-items:center; justify-content:center;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    transition: box-shadow 0.25s ease;
+  }
+  #stage.stepGlowActive {
+    --step-glow: rgba(0, 255, 102, 0.28);
+    box-shadow: inset 0 0 95px var(--step-glow), inset 0 0 30px rgba(0, 0, 0, 0.9);
   }
 
   canvas#matrix { position:absolute; inset:0; width:100%; height:100%; display:block; opacity:0.45; z-index:2; }
+  canvas#stepHackerCanvas { position:absolute; inset:0; width:100%; height:100%; display:none; opacity:0.92; z-index:4; pointer-events:none; }
 
   #stage::before {
     content:""; position:absolute; inset:0; pointer-events:none; z-index:45;
@@ -47,51 +53,64 @@
     font-size:0.92rem; color:#d8ffe8; line-height:1.5;
   }
 
-  /* ---------- 10 FRIENDLY COLOR PAGES ---------- */
+  /* ---------- 10 DARK HACKER STEP PAGES (LOADING BAR + SHORT LABEL ONLY) ---------- */
   #friendlyPage {
-    --theme: #00ff88;
-    --tint: rgba(0, 255, 136, 0.14);
-    position:relative; width:92%; max-width:430px; z-index:15;
-    display:none; flex-direction:column; align-items:center; text-align:center; gap:16px;
-    padding:26px 20px; border-radius:12px;
+    --theme: #00ff66;
+    --tint: rgba(0, 255, 102, 0.16);
+    position:relative; width:92%; max-width:410px; z-index:15;
+    display:none; flex-direction:column; align-items:center; text-align:center; gap:14px;
+    padding:24px 20px; border-radius:10px;
     border:1.5px solid var(--theme);
     background:
-      radial-gradient(circle at 50% 25%, var(--tint) 0%, rgba(0, 0, 0, 0.9) 72%),
-      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 100% 100%, 22px 22px, 22px 22px;
-    box-shadow: 0 0 26px color-mix(in srgb, var(--theme) 32%, transparent);
-    animation: pagePop 0.25s ease-out;
+      radial-gradient(circle at 50% 35%, var(--tint) 0%, rgba(2, 6, 4, 0.92) 76%),
+      linear-gradient(rgba(0, 255, 102, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 102, 0.06) 1px, transparent 1px);
+    background-size: 100% 100%, 18px 18px, 18px 18px;
+    box-shadow: 0 0 28px color-mix(in srgb, var(--theme) 45%, transparent), inset 0 0 28px rgba(0, 0, 0, 0.85);
+    animation: pagePop 0.2s ease-out;
   }
-  #friendlyPage.show { display:flex; }
+  #friendlyPage.show {
+    display:flex;
+    animation: pagePop 0.2s ease-out, stepGlowPulse 1.1s ease-in-out infinite alternate;
+  }
+
+  @keyframes stepGlowPulse {
+    0% {
+      box-shadow:
+        0 0 18px color-mix(in srgb, var(--theme) 35%, transparent),
+        0 0 42px color-mix(in srgb, var(--theme) 18%, transparent),
+        inset 0 0 22px rgba(0, 0, 0, 0.85);
+    }
+    100% {
+      box-shadow:
+        0 0 32px color-mix(in srgb, var(--theme) 72%, transparent),
+        0 0 70px color-mix(in srgb, var(--theme) 36%, transparent),
+        inset 0 0 32px color-mix(in srgb, var(--theme) 16%, transparent);
+    }
+  }
 
   @keyframes pagePop {
-    from { opacity:0; transform: scale(0.96) translateY(6px); }
+    from { opacity:0; transform: scale(0.97) translateY(5px); }
     to { opacity:1; transform: scale(1) translateY(0); }
   }
 
-  .badge {
-    font-size:0.78rem; letter-spacing:1.5px; padding:5px 12px; border-radius:999px;
-    border:1px solid var(--theme); color:var(--theme); background:rgba(0,0,0,0.75);
-  }
   .friendlyTitle {
-    font-size:1.3rem; font-weight:bold; color:var(--theme);
-    text-shadow:0 0 10px color-mix(in srgb, var(--theme) 55%, transparent);
-  }
-  .friendlyMsg {
-    font-size:0.95rem; color:#eefcf3; line-height:1.55; max-width:340px;
+    font-size:1.25rem; font-weight:bold; letter-spacing:3px; color:var(--theme);
+    text-shadow:0 0 12px color-mix(in srgb, var(--theme) 70%, transparent);
   }
 
   .miniBarWrap {
-    width:100%; height:10px; border-radius:999px; overflow:hidden;
-    border:1px solid var(--theme); background:rgba(0,0,0,0.75);
+    width:100%; height:12px; border-radius:4px; overflow:hidden;
+    border:1.5px solid var(--theme); background:rgba(0,0,0,0.85);
+    box-shadow:0 0 12px color-mix(in srgb, var(--theme) 28%, transparent);
   }
   .miniBarFill {
     height:100%; width:0%; background:var(--theme);
-    box-shadow:0 0 10px var(--theme);
+    box-shadow:0 0 14px var(--theme);
   }
   .timerLabel {
-    font-size:0.82rem; color:var(--theme); letter-spacing:1px;
+    font-size:0.82rem; color:var(--theme); letter-spacing:2px; font-weight:bold;
+    text-shadow:0 0 8px color-mix(in srgb, var(--theme) 55%, transparent);
   }
 
   .actionBtn {
@@ -109,7 +128,7 @@
     color:#000;
   }
 
-  /* ---------- 11TH STEP: ORIGINAL PRANK SCREEN + SIDE TECH HUD ---------- */
+  /* ---------- 11TH STEP: ORIGINAL PRANK SCREEN + SIDE TECH HUD + RED GLOW & BRIGHTNESS FLICKER ---------- */
   #prank {
     position:absolute; inset:0; display:none; flex-direction:column;
     align-items:center; justify-content:flex-start;
@@ -117,19 +136,42 @@
     overflow:hidden;
   }
 
+  #prank.redFlickerActive {
+    animation: brightnessPulse 0.14s infinite alternate;
+  }
+
+  @keyframes brightnessPulse {
+    0% { filter: brightness(0.42) contrast(1.25); }
+    50% { filter: brightness(1.55) contrast(1.35); }
+    100% { filter: brightness(0.65) contrast(1.2); }
+  }
+
+  #redGlowOverlay {
+    position:absolute; inset:0; pointer-events:none; z-index:27;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255, 0, 25, 0.14) 0%, rgba(255, 0, 0, 0.56) 76%, rgba(190, 0, 0, 0.82) 100%);
+    box-shadow: inset 0 0 110px rgba(255, 20, 20, 0.9), inset 0 0 40px rgba(255, 0, 0, 0.95);
+    animation: redGlowPulse 0.18s infinite alternate;
+  }
+
+  @keyframes redGlowPulse {
+    0% { opacity: 0.45; }
+    100% { opacity: 1; }
+  }
+
   canvas#hudSideCanvas {
     position:absolute; inset:0; width:100%; height:100%;
-    pointer-events:none; z-index:26; opacity:0.96;
+    pointer-events:none; z-index:26; opacity:0.98;
   }
 
   #picWrap, #log, #barOuter, #pct {
-    position:relative; z-index:28;
+    position:relative; z-index:29;
   }
 
   #picWrap {
     position:relative; width:44vw; max-width:210px; aspect-ratio:1/1;
     border-radius:10px; overflow:hidden; margin-top:4.5vh;
-    box-shadow: 0 0 0 3px #0f0, 0 0 25px 4px #0f0;
+    box-shadow: 0 0 0 3px #ff2a2a, 0 0 28px 6px rgba(255, 25, 25, 0.85);
     opacity:0; transform: scale(0.7);
   }
   #picWrap.show {
@@ -163,22 +205,23 @@
   #log {
     margin-top:3vh; width:88%; max-width:440px; font-size:0.88rem;
     line-height:1.55; text-shadow:0 0 6px #0f0;
-    background: rgba(0, 8, 3, 0.72);
+    background: rgba(18, 2, 2, 0.82);
     padding: 8px 12px; border-radius: 6px;
-    border: 1px solid rgba(0, 255, 85, 0.45);
+    border: 1.5px solid rgba(255, 50, 50, 0.7);
   }
   #log div { opacity:0; white-space:pre-wrap; }
   #log div.on { opacity:1; }
-  #log .bad { color:#ff3b3b; text-shadow:0 0 6px #ff3b3b; }
+  #log .bad { color:#ff3b3b; text-shadow:0 0 8px #ff2222; font-weight:bold; }
 
   #barOuter {
     margin-top:2vh; width:88%; max-width:440px; height:16px;
-    border:1.5px solid #00ff66; border-radius:3px; overflow:hidden;
-    background: rgba(0, 10, 4, 0.85);
+    border:1.5px solid #ff3b3b; border-radius:3px; overflow:hidden;
+    background: rgba(15, 2, 2, 0.9);
+    box-shadow: 0 0 14px rgba(255, 40, 40, 0.45);
   }
-  #barInner { height:100%; width:0%; background:#00ff66; box-shadow:0 0 12px #00ff66; }
+  #barInner { height:100%; width:0%; background:#ff3b3b; box-shadow:0 0 14px #ff2222; }
 
-  #pct { margin-top:8px; font-size:0.85rem; letter-spacing:1px; font-weight:bold; }
+  #pct { margin-top:8px; font-size:0.85rem; letter-spacing:1px; font-weight:bold; color:#ff5555; text-shadow:0 0 8px #ff0000; }
 
   .flash { animation: flashbang 0.35s steps(3) forwards; }
   @keyframes flashbang {
@@ -240,6 +283,7 @@
   <audio id="revealSound" src="Gotcha.aac" preload="auto"></audio>
 
   <canvas id="matrix"></canvas>
+  <canvas id="stepHackerCanvas"></canvas>
 
   <!-- Start Screen -->
   <div id="startScreen">
@@ -248,20 +292,19 @@
     <button id="startBtn" class="actionBtn" style="--theme:#00ff88; --tint:rgba(0,255,136,0.14);">PRESS TO START</button>
   </div>
 
-  <!-- 10 Auto-Advancing Friendly Pages (5s each, different colors, no sound) -->
+  <!-- 10 Dark Hacker Step Pages (Short Word + Loading Bar Only) -->
   <div id="friendlyPage">
-    <div id="pageBadge" class="badge">PAGE 1 / 10</div>
-    <h2 id="pageTitle" class="friendlyTitle">Warm Welcome</h2>
-    <p id="pageMsg" class="friendlyMsg">Glad you stopped by! Relax and enjoy the view.</p>
+    <h2 id="pageTitle" class="friendlyTitle">NODE 01</h2>
     <div class="miniBarWrap">
       <div id="pageBar" class="miniBarFill"></div>
     </div>
-    <div id="pageTimer" class="timerLabel">5s</div>
+    <div id="pageTimer" class="timerLabel">1s</div>
   </div>
 
-  <!-- 11th Step: Original Prank Screen + Side HUD Telemetry -->
+  <!-- 11th Step: Original Prank Screen + Side HUD + Red Glow & Warning Signs -->
   <div id="prank">
     <canvas id="hudSideCanvas"></canvas>
+    <div id="redGlowOverlay"></div>
     <div id="picWrap"><img src="photo.jpg" alt=""></div>
     <div id="log"></div>
     <div id="barOuter"><div id="barInner"></div></div>
@@ -282,15 +325,17 @@
 <script>
 (function(){
   const BACK_LOCK_MS = 90000000;
-  const BACK_GUARD_DEPTH = 200000; // Hold across back steps
-  const STEP_DURATION_MS = 1000; // Step interval
+  const BACK_GUARD_DEPTH = 200000;
+  const STEP_DURATION_MS = 1000;
 
   let lockExpiresAt = Date.now() + BACK_LOCK_MS;
   let currentIndex = 0;
   let onEleventhPage = false;
+  let onFriendlySteps = false;
   let stepInterval = null;
   let stepTimeout = null;
   let hudAnimId = null;
+  let stepHackerAnimId = null;
   let prankProgressValue = 0;
 
   let audioCtx = null;
@@ -300,11 +345,10 @@
   const startScreen = document.getElementById('startScreen');
   const startBtn = document.getElementById('startBtn');
   const friendlyPage = document.getElementById('friendlyPage');
-  const pageBadge = document.getElementById('pageBadge');
   const pageTitle = document.getElementById('pageTitle');
-  const pageMsg = document.getElementById('pageMsg');
   const pageBar = document.getElementById('pageBar');
   const pageTimer = document.getElementById('pageTimer');
+  const stepHackerCanvas = document.getElementById('stepHackerCanvas');
 
   const prank = document.getElementById('prank');
   const hudSideCanvas = document.getElementById('hudSideCanvas');
@@ -320,17 +364,25 @@
   const revealSound = document.getElementById('revealSound');
 
   const friendlyPages = [
-    { color: "#00ff88", tint: "rgba(0, 255, 136, 0.16)", title: "Warm Welcome", msg: "Glad you stopped by! Relax and enjoy the view." },
-    { color: "#00e5ff", tint: "rgba(0, 229, 255, 0.16)", title: "Fresh Breeze", msg: "Taking things easy, one calm step at a time." },
-    { color: "#ff4da6", tint: "rgba(255, 77, 166, 0.16)", title: "Bright Smile", msg: "A little positivity can turn any moment around." },
-    { color: "#ffd000", tint: "rgba(255, 208, 0, 0.16)", title: "Sunny Mood", msg: "Good energy flowing right through this page." },
-    { color: "#b366ff", tint: "rgba(179, 102, 255, 0.18)", title: "Calm Focus", msg: "No rush at all—just hang tight for a few seconds." },
-    { color: "#ff6a00", tint: "rgba(255, 106, 0, 0.18)", title: "Cozy Vibe", msg: "Halfway through our friendly little tour!" },
-    { color: "#2ee6a6", tint: "rgba(46, 230, 166, 0.16)", title: "Easy Going", msg: "Everything moving smoothly and quietly." },
-    { color: "#4da6ff", tint: "rgba(77, 166, 255, 0.16)", title: "Clear Skies", msg: "Almost at the end of these ten stops." },
-    { color: "#ff7043", tint: "rgba(255, 112, 67, 0.18)", title: "Friendly Note", msg: "Appreciate your patience—one more stop coming up!" },
-    { color: "#d4ff00", tint: "rgba(212, 255, 0, 0.18)", title: "Final Stop", msg: "Step 10 wrapping up now—get ready!" }
+    { color: "#00ff66", glow: "rgba(0, 255, 102, 0.34)", tint: "rgba(0, 255, 102, 0.18)", title: "NODE 01" },
+    { color: "#ff2a4b", glow: "rgba(255, 42, 75, 0.34)", tint: "rgba(255, 42, 75, 0.18)", title: "TRACE 02" },
+    { color: "#00e5ff", glow: "rgba(0, 229, 255, 0.34)", tint: "rgba(0, 229, 255, 0.18)", title: "SHELL 03" },
+    { color: "#ff5500", glow: "rgba(255, 85, 0, 0.34)", tint: "rgba(255, 85, 0, 0.18)", title: "PROBE 04" },
+    { color: "#b366ff", glow: "rgba(179, 102, 255, 0.36)", tint: "rgba(179, 102, 255, 0.20)", title: "CRYPT 05" },
+    { color: "#ff1e56", glow: "rgba(255, 30, 86, 0.36)", tint: "rgba(255, 30, 86, 0.20)", title: "HOOK 06" },
+    { color: "#00ffaa", glow: "rgba(0, 255, 170, 0.34)", tint: "rgba(0, 255, 170, 0.18)", title: "DUMP 07" },
+    { color: "#ff3b3b", glow: "rgba(255, 59, 59, 0.36)", tint: "rgba(255, 59, 59, 0.20)", title: "BYPASS 08" },
+    { color: "#aaff00", glow: "rgba(170, 255, 0, 0.34)", tint: "rgba(170, 255, 0, 0.18)", title: "INJECT 09" },
+    { color: "#ff0044", glow: "rgba(255, 0, 68, 0.40)", tint: "rgba(255, 0, 68, 0.22)", title: "ROOT 10" }
   ];
+
+  // Hacker hex lanes & pulsing nodes for the 10 loading steps
+  const hexLanes = Array.from({ length: 12 }, (_, idx) => ({
+    xRatio: (idx + 0.5) / 12,
+    y: Math.random() * 600,
+    speed: 2.2 + (idx % 4) * 1.15,
+    seed: idx * 37
+  }));
 
   function getAudioContext() {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -447,7 +499,131 @@
     }
   });
 
-  // Bold, dark & more movable Side HUD Telemetry Canvas for 11th screen
+  // Full Hacker Vibe Background Animation (Hex stream + pulsing circuit nodes + screen glow)
+  function drawStepHackerBg(now) {
+    if (!onFriendlySteps) return;
+    const ctx = stepHackerCanvas.getContext('2d');
+    const w = stepHackerCanvas.width = stepHackerCanvas.clientWidth || window.innerWidth;
+    const h = stepHackerCanvas.height = stepHackerCanvas.clientHeight || window.innerHeight;
+    const item = friendlyPages[currentIndex] || friendlyPages[0];
+    const accent = item.color;
+    const t = now * 0.001;
+    const glowStrength = 0.65 + 0.35 * Math.sin(t * 6.5);
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+
+    // Glowing radial screen vignette
+    const rad = ctx.createRadialGradient(w * 0.5, h * 0.5, Math.min(w, h) * 0.12, w * 0.5, h * 0.5, Math.max(w, h) * 0.72);
+    rad.addColorStop(0, 'rgba(0, 0, 0, 0.12)');
+    rad.addColorStop(0.75, item.tint);
+    rad.addColorStop(1, item.glow);
+    ctx.fillStyle = rad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Sweeping horizontal radar / exploit pulse line
+    const sweepY = ((t * 210) % (h + 120)) - 60;
+    const band = ctx.createLinearGradient(0, sweepY - 34, 0, sweepY + 34);
+    band.addColorStop(0, 'rgba(0,0,0,0)');
+    band.addColorStop(0.5, item.tint);
+    band.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = band;
+    ctx.fillRect(0, sweepY - 34, w, 68);
+
+    ctx.strokeStyle = accent;
+    ctx.globalAlpha = 0.55 * glowStrength;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(0, sweepY);
+    ctx.lineTo(w, sweepY);
+    ctx.stroke();
+
+    // Animated hex byte streams & network nodes
+    ctx.font = 'bold 11px "Courier New", monospace';
+    hexLanes.forEach((lane, i) => {
+      lane.y += lane.speed;
+      if (lane.y > h + 40) lane.y = -40;
+
+      const lx = lane.xRatio * w;
+      ctx.globalAlpha = 0.22;
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(lx, 0);
+      ctx.lineTo(lx, h);
+      ctx.stroke();
+
+      for (let r = 0; r < 5; r++) {
+        const yy = ((lane.y + r * 36) % (h + 60)) - 30;
+        const hexVal = (((Math.floor(t * 17) + lane.seed + r * 19) % 255)
+          .toString(16)
+          .toUpperCase()
+          .padStart(2, '0'));
+        ctx.globalAlpha = r === 0 ? 0.85 * glowStrength : 0.38;
+        ctx.fillStyle = r === 0 ? '#ffffff' : accent;
+        ctx.fillText('0x' + hexVal, lx - 14, yy);
+      }
+
+      // Pulsing hacker node ring
+      const nodeY = ((t * 130 + i * 75) % (h - 40)) + 20;
+      const pulseR = 5 + 4 * (0.5 + 0.5 * Math.sin(t * 7 + i));
+      ctx.globalAlpha = 0.72 * glowStrength;
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(lx, nodeY, pulseR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = accent;
+      ctx.beginPath();
+      ctx.arc(lx, nodeY, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.restore();
+    stepHackerAnimId = requestAnimationFrame(drawStepHackerBg);
+  }
+
+  function startStepHackerBg() {
+    stopStepHackerBg();
+    onFriendlySteps = true;
+    stepHackerCanvas.style.display = 'block';
+    stage.classList.add('stepGlowActive');
+    stepHackerAnimId = requestAnimationFrame(drawStepHackerBg);
+  }
+
+  function stopStepHackerBg() {
+    onFriendlySteps = false;
+    if (stepHackerAnimId) {
+      cancelAnimationFrame(stepHackerAnimId);
+      stepHackerAnimId = null;
+    }
+    stepHackerCanvas.style.display = 'none';
+    stage.classList.remove('stepGlowActive');
+  }
+
+  function drawWarningSign(ctx, cx, cy, size, color) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = 'rgba(120, 0, 0, 0.72)';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - size);
+    ctx.lineTo(cx + size * 0.92, cy + size * 0.72);
+    ctx.lineTo(cx - size * 0.92, cy + size * 0.72);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.fillRect(cx - 2, cy - size * 0.34, 4, size * 0.62);
+    ctx.beginPath();
+    ctx.arc(cx, cy + size * 0.45, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Bold Side HUD Telemetry + Red Warning Signs for 11th screen
   function drawSideHud(now) {
     const ctx = hudSideCanvas.getContext('2d');
     const w = hudSideCanvas.width = hudSideCanvas.clientWidth || window.innerWidth;
@@ -456,39 +632,40 @@
 
     const t = now * 0.001;
     const boldGreen = '#00ff66';
-    const strongTrack = 'rgba(0, 255, 102, 0.48)';
-    const darkPanel = 'rgba(0, 8, 3, 0.78)';
+    const warnRed = '#ff2a2a';
+    const brightRed = '#ff5252';
+    const strongTrack = 'rgba(255, 50, 50, 0.55)';
+    const darkRedPanel = 'rgba(22, 2, 2, 0.84)';
+    const warnFlash = Math.sin(t * 22) > 0;
 
     ctx.save();
-    ctx.shadowColor = '#00ff55';
-    ctx.shadowBlur = 10;
-    ctx.strokeStyle = boldGreen;
-    ctx.fillStyle = boldGreen;
+    ctx.shadowColor = warnFlash ? '#ff1a1a' : '#00ff55';
+    ctx.shadowBlur = 12;
 
-    // Top-left moving badge
     const topShiftL = Math.sin(t * 3.5) * 5;
-    ctx.fillStyle = darkPanel;
-    ctx.fillRect(10 + topShiftL, 12, 122, 30);
+    ctx.fillStyle = darkRedPanel;
+    ctx.fillRect(10 + topShiftL, 12, 128, 32);
     ctx.lineWidth = 2.2;
-    ctx.strokeRect(10 + topShiftL, 12, 122, 30);
-    ctx.fillStyle = boldGreen;
-    ctx.font = 'bold 11px "Courier New", monospace';
-    ctx.fillText('NODE // LINK', 18 + topShiftL, 24);
+    ctx.strokeStyle = warnFlash ? brightRed : warnRed;
+    ctx.strokeRect(10 + topShiftL, 12, 128, 32);
+    drawWarningSign(ctx, 24 + topShiftL, 28, 9, brightRed);
+    ctx.fillStyle = brightRed;
     ctx.font = 'bold 10px "Courier New", monospace';
-    ctx.fillText(`SYNC ${Math.min(100, Math.floor(prankProgressValue))}%`, 18 + topShiftL, 36);
+    ctx.fillText('! ALERT // LOCK', 38 + topShiftL, 25);
+    ctx.font = 'bold 10px "Courier New", monospace';
+    ctx.fillText(`SYNC ${Math.min(100, Math.floor(prankProgressValue))}%`, 38 + topShiftL, 38);
 
-    // Top-right moving meter bar
     const topShiftR = Math.cos(t * 3.5) * 5;
-    const rightX = Math.max(140, w - 132) + topShiftR;
-    ctx.fillStyle = darkPanel;
-    ctx.fillRect(rightX, 12, 122, 30);
+    const rightX = Math.max(140, w - 134) + topShiftR;
+    ctx.fillStyle = darkRedPanel;
+    ctx.fillRect(rightX, 12, 124, 32);
     ctx.lineWidth = 2.2;
-    ctx.strokeRect(rightX, 12, 122, 30);
-    const barFillW = Math.max(12, ((Math.sin(t * 5.2) + 1) * 0.5) * 106);
-    ctx.fillStyle = '#00ff66';
-    ctx.fillRect(rightX + 8, 20, barFillW, 14);
+    ctx.strokeStyle = warnFlash ? brightRed : warnRed;
+    ctx.strokeRect(rightX, 12, 124, 32);
+    const barFillW = Math.max(12, ((Math.sin(t * 6.5) + 1) * 0.5) * 108);
+    ctx.fillStyle = warnFlash ? '#ff2a2a' : '#ff6b6b';
+    ctx.fillRect(rightX + 8, 21, barFillW, 14);
 
-    // Left-side fast-rotating spoke blades with subtle vertical glide
     const lx = Math.min(82, w * 0.14) + Math.sin(t * 2.4) * 6;
     const ly = h * 0.34 + Math.cos(t * 3.1) * 10;
     const lr = Math.min(56, w * 0.115);
@@ -508,8 +685,8 @@
       const pulse = 0.5 + 0.5 * Math.sin(t * 8 + i * 1.1);
       const rInner = lr * 0.26;
       const rOuter = lr * (0.68 + 0.32 * pulse);
-      ctx.strokeStyle = boldGreen;
-      ctx.fillStyle = 'rgba(0, 255, 102, 0.32)';
+      ctx.strokeStyle = i % 2 === 0 ? brightRed : boldGreen;
+      ctx.fillStyle = i % 2 === 0 ? 'rgba(255, 42, 42, 0.35)' : 'rgba(0, 255, 102, 0.25)';
       ctx.lineWidth = 2.4;
       ctx.beginPath();
       ctx.moveTo(lx + Math.cos(ang - 0.14) * rInner, ly + Math.sin(ang - 0.14) * rInner);
@@ -520,22 +697,22 @@
       ctx.stroke();
     }
 
-    // Left-lower movable telemetry block
     const lBoxX = 10 + Math.cos(t * 2.8) * 6;
     const lBoxY = h * 0.56 + Math.sin(t * 2.2) * 8;
-    ctx.fillStyle = darkPanel;
-    ctx.fillRect(lBoxX, lBoxY, 98, 78);
+    ctx.fillStyle = darkRedPanel;
+    ctx.fillRect(lBoxX, lBoxY, 102, 82);
     ctx.lineWidth = 2.2;
-    ctx.strokeStyle = boldGreen;
-    ctx.strokeRect(lBoxX, lBoxY, 98, 78);
-    ctx.fillStyle = boldGreen;
+    ctx.strokeStyle = warnRed;
+    ctx.strokeRect(lBoxX, lBoxY, 102, 82);
+    drawWarningSign(ctx, lBoxX + 16, lBoxY + 18, 8, brightRed);
+    ctx.fillStyle = brightRed;
     ctx.font = 'bold 10px "Courier New", monospace';
-    ctx.fillText(`PKT ${Math.floor(400 + ((t * 260) % 599))}`, lBoxX + 7, lBoxY + 17);
-    ctx.fillText(`LAT ${Math.floor(8 + ((t * 64) % 58))}ms`, lBoxX + 7, lBoxY + 33);
-    ctx.fillText(`CH-0${(Math.floor(t * 4) % 8) + 1}`, lBoxX + 7, lBoxY + 49);
-    ctx.fillText(`HEX ${((Math.floor(t * 511) % 255).toString(16).toUpperCase().padStart(2, '0'))}F9`, lBoxX + 7, lBoxY + 65);
+    ctx.fillText('WARN 0x9F', lBoxX + 28, lBoxY + 21);
+    ctx.fillStyle = '#ff9999';
+    ctx.fillText(`LAT ${Math.floor(8 + ((t * 64) % 58))}ms`, lBoxX + 7, lBoxY + 38);
+    ctx.fillText(`CH-0${(Math.floor(t * 4) % 8) + 1}`, lBoxX + 7, lBoxY + 54);
+    ctx.fillText(`HEX ${((Math.floor(t * 511) % 255).toString(16).toUpperCase().padStart(2, '0'))}F9`, lBoxX + 7, lBoxY + 70);
 
-    // Right-side dynamic circular gauge with counter-orbiting arc
     const rx = Math.max(w - 82, w * 0.86) + Math.cos(t * 2.4) * 6;
     const ry = h * 0.34 + Math.sin(t * 3.1) * 10;
     const rr = Math.min(52, w * 0.11);
@@ -545,62 +722,63 @@
     ctx.arc(rx, ry, rr, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.strokeStyle = boldGreen;
+    ctx.strokeStyle = brightRed;
     ctx.beginPath();
     ctx.arc(rx, ry, rr + 4, -t * 3.2, -t * 3.2 + Math.PI * 0.85);
     ctx.stroke();
 
     const gaugeVal = Math.min(100, Math.floor(prankProgressValue));
     const sweepEnd = -Math.PI / 2 + (gaugeVal / 100) * Math.PI * 2;
-    ctx.strokeStyle = boldGreen;
+    ctx.strokeStyle = warnRed;
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.arc(rx, ry, rr - 6, -Math.PI / 2, sweepEnd);
     ctx.stroke();
 
     ctx.lineWidth = 2;
-    ctx.fillStyle = boldGreen;
+    ctx.fillStyle = brightRed;
     ctx.font = 'bold 14px "Courier New", monospace';
     const gText = String(gaugeVal);
     ctx.fillText(gText, rx - ctx.measureText(gText).width / 2, ry + 5);
 
-    // Right-lower high-motion waveform box
-    const bx = Math.max(w - 108, w - 108) + Math.sin(t * 2.8) * 6;
+    const bx = Math.max(w - 110, w - 110) + Math.sin(t * 2.8) * 6;
     const by = h * 0.56 + Math.cos(t * 2.2) * 8;
-    ctx.fillStyle = darkPanel;
-    ctx.fillRect(bx, by, 98, 78);
+    ctx.fillStyle = darkRedPanel;
+    ctx.fillRect(bx, by, 100, 82);
     ctx.lineWidth = 2.2;
-    ctx.strokeRect(bx, by, 98, 78);
+    ctx.strokeStyle = warnRed;
+    ctx.strokeRect(bx, by, 100, 82);
+    drawWarningSign(ctx, bx + 50, by + 16, 7, warnFlash ? brightRed : warnRed);
 
+    ctx.strokeStyle = brightRed;
     ctx.lineWidth = 2.4;
     ctx.beginPath();
-    for (let x = 6; x <= 92; x += 2.5) {
-      const norm = x / 92;
+    for (let x = 6; x <= 94; x += 2.5) {
+      const norm = x / 94;
       const env = Math.sin(norm * Math.PI);
-      const amp = Math.sin(x * 0.28 + t * 15) * Math.cos(x * 0.12 - t * 8) * 24 * env;
-      const py = by + 39 + amp;
+      const amp = Math.sin(x * 0.28 + t * 15) * Math.cos(x * 0.12 - t * 8) * 18 * env;
+      const py = by + 50 + amp;
       if (x === 6) ctx.moveTo(bx + x, py);
       else ctx.lineTo(bx + x, py);
     }
     ctx.stroke();
 
-    // Connecting bold circuit lines & moving pulse dot along bottom edge
     ctx.lineWidth = 2;
     ctx.strokeStyle = strongTrack;
     ctx.beginPath();
-    ctx.moveTo(lBoxX + 98, lBoxY + 39);
-    ctx.lineTo(126, lBoxY + 39);
+    ctx.moveTo(lBoxX + 102, lBoxY + 41);
+    ctx.lineTo(126, lBoxY + 41);
     ctx.lineTo(126, h - 18);
     ctx.lineTo(w - 126, h - 18);
-    ctx.lineTo(w - 126, by + 39);
-    ctx.lineTo(bx, by + 39);
+    ctx.lineTo(w - 126, by + 41);
+    ctx.lineTo(bx, by + 41);
     ctx.stroke();
 
-    const pulseProg = (t * 0.85) % 1;
+    const pulseProg = (t * 0.95) % 1;
     const pulseX = 126 + pulseProg * Math.max(40, w - 252);
-    ctx.fillStyle = boldGreen;
+    ctx.fillStyle = brightRed;
     ctx.beginPath();
-    ctx.arc(pulseX, h - 18, 4.5, 0, Math.PI * 2);
+    ctx.arc(pulseX, h - 18, 4.8, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
@@ -621,8 +799,8 @@
     }
   }
 
-  // Matrix rain background
   let matrixInterval = null;
+  let hackerSweepPhase = 0;
   function startMatrix(){
     canvas.style.display = 'block';
     const ctx = canvas.getContext('2d');
@@ -632,23 +810,46 @@
     }
     resize();
     window.addEventListener('resize', resize);
-    const chars = "01";
-    const fontSize = 16;
-    const columns = Math.floor(canvas.width / fontSize);
-    const drops = new Array(columns).fill(1);
+    const glyphs = ["#", "!", "X", "/", "\\", "_", "?", "%"];
     if (matrixInterval) clearInterval(matrixInterval);
     matrixInterval = setInterval(() => {
-      ctx.fillStyle = 'rgba(0,0,0,0.08)';
-      ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle = '#0f0';
-      ctx.font = fontSize + 'px monospace';
-      for (let i=0;i<drops.length;i++){
-        const text = chars[Math.floor(Math.random()*chars.length)];
-        ctx.fillText(text, i*fontSize, drops[i]*fontSize);
-        if (drops[i]*fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++;
+      hackerSweepPhase += 0.08;
+      ctx.fillStyle = 'rgba(0, 4, 2, 0.24)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const gridSize = 28;
+      ctx.strokeStyle = 'rgba(0, 255, 90, 0.08)';
+      ctx.lineWidth = 1;
+      for (let gx = 0; gx < canvas.width; gx += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(gx, 0);
+        ctx.lineTo(gx, canvas.height);
+        ctx.stroke();
       }
-    }, 45);
+      for (let gy = 0; gy < canvas.height; gy += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, gy);
+        ctx.lineTo(canvas.width, gy);
+        ctx.stroke();
+      }
+
+      const scanY = ((hackerSweepPhase * 90) % (canvas.height + 80)) - 40;
+      const grad = ctx.createLinearGradient(0, scanY - 24, 0, scanY + 24);
+      grad.addColorStop(0, 'rgba(0, 255, 80, 0)');
+      grad.addColorStop(0.5, 'rgba(0, 255, 80, 0.22)');
+      grad.addColorStop(1, 'rgba(0, 255, 80, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, scanY - 24, canvas.width, 48);
+
+      ctx.font = 'bold 13px monospace';
+      for (let k = 0; k < 14; k++) {
+        const rx = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize + 8;
+        const ry = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize + 18;
+        const sym = glyphs[Math.floor(Math.random() * glyphs.length)];
+        ctx.fillStyle = Math.random() > 0.72 ? 'rgba(255, 45, 45, 0.55)' : 'rgba(0, 255, 100, 0.36)';
+        ctx.fillText(sym, rx, ry);
+      }
+    }, 55);
   }
 
   function stopMatrix(){
@@ -669,13 +870,13 @@
     currentIndex = index;
     const item = friendlyPages[index];
 
+    startStepHackerBg();
+    stage.style.setProperty('--step-glow', item.glow);
     friendlyPage.style.setProperty('--theme', item.color);
     friendlyPage.style.setProperty('--tint', item.tint);
-    pageBadge.textContent = `PAGE ${index + 1} / 10`;
     pageTitle.textContent = item.title;
-    pageMsg.textContent = item.msg;
     pageBar.style.width = '0%';
-    pageTimer.textContent = '5s';
+    pageTimer.textContent = '1s';
 
     friendlyPage.classList.remove('show');
     void friendlyPage.offsetWidth;
@@ -688,7 +889,7 @@
       const leftSec = Math.max(0, Math.ceil((STEP_DURATION_MS - elapsed) / 1000));
       pageBar.style.width = pct + '%';
       pageTimer.textContent = `${leftSec}s`;
-    }, 50);
+    }, 40);
 
     stepTimeout = setTimeout(() => {
       clearStepTimers();
@@ -724,6 +925,7 @@
 
   function openEleventhOriginalPrank(){
     clearStepTimers();
+    stopStepHackerBg();
     onEleventhPage = true;
     prankProgressValue = 0;
     armBackLock(BACK_LOCK_MS, BACK_GUARD_DEPTH);
@@ -732,6 +934,7 @@
 
     friendlyPage.classList.remove('show');
     prank.style.display = 'flex';
+    prank.classList.add('redFlickerActive');
     startMatrix();
     startSideHud();
 
@@ -771,6 +974,7 @@
 
     setTimeout(()=>{
       stage.classList.remove('flash');
+      prank.classList.remove('redFlickerActive');
       stopSideHud();
       prank.style.display = 'none';
       thanksHackerScreen.classList.add('show');
@@ -781,6 +985,7 @@
 
     setTimeout(()=>{
       onEleventhPage = false;
+      prank.classList.remove('redFlickerActive');
       stopSideHud();
       thanksHackerScreen.classList.remove('show');
       stopMatrix();
@@ -801,6 +1006,8 @@
 </script>
 </body>
 </html>
+
+
 
 
 
