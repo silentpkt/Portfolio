@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>System Check</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width:100%; height:100%; background:#000; overflow:hidden;
+    font-family: 'Courier New', monospace;
+    color:#0f0;
+  }
+  #stage {
+    position:fixed; inset:0; background:#000;
+    display:flex; align-items:center; justify-content:center;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* ---------- START SCREEN ---------- */
+  #startScreen {
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; gap:18px;
+    background:#000; z-index:50;
+  }
+  #startScreen h1 { color:#0f0; font-size:1.3rem; letter-spacing:1px; }
+  #startBtn {
+    background:transparent; border:2px solid #0f0; color:#0f0;
+    padding:14px 32px; font-family:inherit; font-size:1rem; border-radius:6px;
+    letter-spacing:2px; cursor:pointer;
+  }
+  #startBtn:active { background:#0f0; color:#000; }
+
+  /* ---------- MATRIX RAIN ---------- */
+  canvas#matrix { position:absolute; inset:0; width:100%; height:100%; display:none; }
+
+  /* ---------- MAIN PRANK SCREEN ---------- */
+  #prank {
+    position:absolute; inset:0; display:none; flex-direction:column;
+    align-items:center; z-index:10; padding-top: max(32px, env(safe-area-inset-top));
+  }
+
+  #picWrap {
+    position:relative; width:46vw; max-width:220px; aspect-ratio:1/1;
+    border-radius:10px; overflow:hidden; margin-top:6vh;
+    box-shadow: 0 0 0 3px #0f0, 0 0 25px 4px #0f0;
+    opacity:0; transform: scale(0.7);
+  }
+  #picWrap.show {
+    animation: popIn .35s ease-out forwards, glitchShake .12s steps(2) infinite;
+  }
+  #picWrap img {
+    width:100%; height:100%; object-fit:cover; display:block;
+    filter: grayscale(1) brightness(0.9) contrast(1.3) sepia(1) hue-rotate(60deg) saturate(4);
+    mix-blend-mode: normal;
+  }
+  #picWrap::after {
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background: repeating-linear-gradient(
+      to bottom, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 2px,
+      transparent 2px, transparent 4px
+    );
+    mix-blend-mode: overlay;
+  }
+
+  @keyframes popIn {
+    0% { opacity:0; transform:scale(0.6); }
+    60% { opacity:1; transform:scale(1.05); }
+    100% { opacity:1; transform:scale(1); }
+  }
+  @keyframes glitchShake {
+    0% { transform: translate(0,0); }
+    50% { transform: translate(1px,-1px); }
+    100% { transform: translate(-1px,1px); }
+  }
+
+  #log {
+    margin-top:4vh; width:88%; max-width:460px; font-size:0.9rem;
+    line-height:1.6; text-shadow:0 0 6px #0f0;
+  }
+  #log div { opacity:0; white-space:pre-wrap; }
+  #log div.on { opacity:1; }
+  #log .bad { color:#ff3b3b; text-shadow:0 0 6px #ff3b3b; }
+
+  #barOuter {
+    margin-top:2.5vh; width:88%; max-width:460px; height:16px;
+    border:1px solid #0f0; border-radius:3px; overflow:hidden;
+  }
+  #barInner { height:100%; width:0%; background:#0f0; box-shadow:0 0 10px #0f0; }
+
+  #pct { margin-top:8px; font-size:0.85rem; letter-spacing:1px; }
+
+  /* ---------- SCREEN GLITCH FLASH ---------- */
+  .flash { animation: flashbang 0.35s steps(3) forwards; }
+  @keyframes flashbang {
+    0% { filter: invert(0); }
+    30% { filter: invert(1) hue-rotate(180deg); }
+    60% { filter: invert(0.3); }
+    100% { filter: invert(0); }
+  }
+
+  /* ---------- REVEAL SCREEN (hacker-style, but honest) ---------- */
+  #reveal {
+    position:absolute; inset:0; display:none; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    background: radial-gradient(circle at 50% 40%, #1a0000 0%, #000 70%);
+    color:#0f0; padding:8vw; gap:16px; z-index:60;
+    font-family: 'Courier New', monospace;
+  }
+  #reveal.show { display:flex; animation: fadeIn .4s ease-out, revealGlow 1.6s ease-in-out infinite; }
+  @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+  @keyframes revealGlow {
+    0%, 100% { box-shadow: inset 0 0 80px 10px rgba(255,0,0,0.25); }
+    50% { box-shadow: inset 0 0 140px 20px rgba(255,0,0,0.45); }
+  }
+  #reveal .emoji { font-size:3.2rem; }
+  #reveal h2 { font-size:1.4rem; color:#ff3b3b; text-shadow:0 0 10px #ff3b3b; letter-spacing:1px; }
+  #reveal p { font-size:1rem; color:#9effa0; max-width:340px; }
+
+  /* ---------- FINAL BLACK SCREEN ---------- */
+  #finalBlack {
+    position:absolute; inset:0; background:#000; display:none; z-index:70;
+  }
+  #finalBlack.show { display:block; animation: fadeIn .5s ease-out; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <audio id="gotchaSound" src="Glitchinng.aac" preload="auto"></audio>
+  <audio id="revealSound" src="Gotcha.aac" preload="auto"></audio>
+
+  <div id="startScreen">
+    <h1>⚠ TAP TO OPEN LINK ⚠</h1>
+    <button id="startBtn">OPEN</button>
+  </div>
+
+  <canvas id="matrix"></canvas>
+
+  <div id="prank">
+    <div id="picWrap"><img src="photo.jpg" alt=""></div>
+    <div id="log"></div>
+    <div id="barOuter"><div id="barInner"></div></div>
+    <div id="pct">0%</div>
+  </div>
+
+  <div id="reveal">
+     <div class="emoji">🥷  💀</div>
+    <h2>💀Thanks Buddy for access.</h2>
+    <p>Welcome to RpJword ,The depth of black trick.</p>
+  </div>
+
+  <div id="finalBlack"></div>
+
+</div>
+
+<script>
+(function(){
+  const startScreen = document.getElementById('startScreen');
+  const stage = document.getElementById('stage');
+  const prank = document.getElementById('prank');
+  const picWrap = document.getElementById('picWrap');
+  const logEl = document.getElementById('log');
+  const barInner = document.getElementById('barInner');
+  const pctEl = document.getElementById('pct');
+  const revealEl = document.getElementById('reveal');
+  const finalBlack = document.getElementById('finalBlack');
+  const canvas = document.getElementById('matrix');
+  const startBtn = document.getElementById('startBtn');
+  const gotchaSound = document.getElementById('gotchaSound');
+  const revealSound = document.getElementById('revealSound');
+
+  let matrixInterval = null;
+
+  function startMatrix(){
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+    function resize(){
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    const chars = "01";
+    const fontSize = 16;
+    let columns = Math.floor(canvas.width / fontSize);
+    let drops = new Array(columns).fill(1);
+    matrixInterval = setInterval(() => {
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#0f0';
+      ctx.font = fontSize + 'px monospace';
+      for (let i=0;i<drops.length;i++){
+        const text = chars[Math.floor(Math.random()*chars.length)];
+        ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+        if (drops[i]*fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    }, 45);
+  }
+
+  function stopMatrix(){
+    if (matrixInterval) clearInterval(matrixInterval);
+    canvas.style.display = 'none';
+  }
+
+  const lines = [
+    { text: "> connecting to device...", bad:false },
+    { text: "> access granted", bad:false },
+    { text: "> scanning system...", bad:false },
+    { text: "> unauthorized access detected", bad:true },
+    { text: "> running deep scan...", bad:true },
+    { text: "> system compromised", bad:true },
+    { text: "> Whatsappp Access Granted", bad:false },
+    { text: "> Whatsapp OTP Crashing", bad:false },
+    { text: "> Whatsapp Chat Transfering", bad:true },
+    { text: "> Browser Watch History", bad:true },
+  ];
+
+  function addLine(i){
+    if (i >= lines.length) return;
+    const d = document.createElement('div');
+    d.textContent = lines[i].text;
+    if (lines[i].bad) d.classList.add('bad');
+    logEl.appendChild(d);
+    requestAnimationFrame(()=> d.classList.add('on'));
+  }
+
+  function runSequence(){
+    gotchaSound.play();
+    startScreen.style.display = 'none';
+    prank.style.display = 'flex';
+    startMatrix();
+
+    setTimeout(()=> picWrap.classList.add('show'), 150);
+
+    let lineDelay = 500;
+    lines.forEach((l, i) => {
+      setTimeout(()=> addLine(i), 450 + i*lineDelay);
+    });
+
+    // progress bar fill over ~5.9s (bar khud 0% se 100% tak isi duration mein bharega)
+    let pct = 0;
+    const totalDuration = 14000;
+    const stepTime = 40;
+    const steps = totalDuration / stepTime;
+    const increment = 100 / steps;
+    const barTimer = setInterval(()=>{
+      pct = Math.min(100, pct + increment);
+      barInner.style.width = pct + '%';
+      pctEl.textContent = Math.floor(pct) + '%';
+      if (pct >= 100){
+        clearInterval(barTimer);
+      }
+    }, stepTime);
+
+    // quick flash glitch then reveal — bar khatam hone ke thori der baad
+    setTimeout(()=>{
+      stage.classList.add('flash');
+    }, totalDuration + 700);
+
+    setTimeout(()=>{
+      stopMatrix();
+      stage.classList.remove('flash');
+      prank.style.display = 'none';
+      revealEl.classList.add('show');
+      gotchaSound.pause();      // glitch wali audio band
+      revealSound.play();       // gotcha wali audio shuru, yahin reveal show hote hi
+    }, totalDuration + 1100);
+
+    // reveal screen ("Gotcha") stays for ~10 seconds, then auto-fades to a plain black screen
+    setTimeout(()=>{
+      revealEl.classList.remove('show');
+      finalBlack.classList.add('show');
+      revealSound.pause();      // black screen par audio sirf ruk jaye, dobara na baje
+    }, totalDuration + 1100 + 10000);
+  }
+
+  function reset(){
+    finalBlack.classList.remove('show');
+    revealEl.classList.remove('show');
+    picWrap.classList.remove('show');
+    logEl.innerHTML = '';
+    barInner.style.width = '0%';
+    pctEl.textContent = '0%';
+    gotchaSound.pause(); gotchaSound.currentTime = 0;
+    revealSound.pause(); revealSound.currentTime = 0;
+    startScreen.style.display = 'flex';
+  }
+
+    startBtn.addEventListener('click', runSequence);
+  finalBlack.addEventListener('click', reset);
+
+  history.pushState(null, '', location.href);
+  window.addEventListener('popstate', function(){
+    history.pushState(null, '', location.href);
+  });
+})();
+</script>
+</body>
+</html>
