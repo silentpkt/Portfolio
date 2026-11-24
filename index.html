@@ -18,7 +18,7 @@
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 
-  canvas#matrix { position:absolute; inset:0; width:100%; height:100%; display:block; opacity:0.55; z-index:2; }
+  canvas#matrix { position:absolute; inset:0; width:100%; height:100%; display:block; opacity:0.45; z-index:2; }
 
   #stage::before {
     content:""; position:absolute; inset:0; pointer-events:none; z-index:45;
@@ -109,15 +109,26 @@
     color:#000;
   }
 
-  /* ---------- 11TH STEP: ORIGINAL PRANK SCREEN ---------- */
+  /* ---------- 11TH STEP: ORIGINAL PRANK SCREEN + SIDE TECH HUD ---------- */
   #prank {
     position:absolute; inset:0; display:none; flex-direction:column;
-    align-items:center; z-index:25; padding-top: max(32px, env(safe-area-inset-top));
+    align-items:center; justify-content:flex-start;
+    z-index:25; padding-top: max(24px, env(safe-area-inset-top));
+    overflow:hidden;
+  }
+
+  canvas#hudSideCanvas {
+    position:absolute; inset:0; width:100%; height:100%;
+    pointer-events:none; z-index:26; opacity:0.96;
+  }
+
+  #picWrap, #log, #barOuter, #pct {
+    position:relative; z-index:28;
   }
 
   #picWrap {
-    position:relative; width:46vw; max-width:220px; aspect-ratio:1/1;
-    border-radius:10px; overflow:hidden; margin-top:6vh;
+    position:relative; width:44vw; max-width:210px; aspect-ratio:1/1;
+    border-radius:10px; overflow:hidden; margin-top:4.5vh;
     box-shadow: 0 0 0 3px #0f0, 0 0 25px 4px #0f0;
     opacity:0; transform: scale(0.7);
   }
@@ -150,20 +161,24 @@
   }
 
   #log {
-    margin-top:4vh; width:88%; max-width:460px; font-size:0.9rem;
-    line-height:1.6; text-shadow:0 0 6px #0f0;
+    margin-top:3vh; width:88%; max-width:440px; font-size:0.88rem;
+    line-height:1.55; text-shadow:0 0 6px #0f0;
+    background: rgba(0, 8, 3, 0.72);
+    padding: 8px 12px; border-radius: 6px;
+    border: 1px solid rgba(0, 255, 85, 0.45);
   }
   #log div { opacity:0; white-space:pre-wrap; }
   #log div.on { opacity:1; }
   #log .bad { color:#ff3b3b; text-shadow:0 0 6px #ff3b3b; }
 
   #barOuter {
-    margin-top:2.5vh; width:88%; max-width:460px; height:16px;
-    border:1px solid #0f0; border-radius:3px; overflow:hidden;
+    margin-top:2vh; width:88%; max-width:440px; height:16px;
+    border:1.5px solid #00ff66; border-radius:3px; overflow:hidden;
+    background: rgba(0, 10, 4, 0.85);
   }
-  #barInner { height:100%; width:0%; background:#0f0; box-shadow:0 0 10px #0f0; }
+  #barInner { height:100%; width:0%; background:#00ff66; box-shadow:0 0 12px #00ff66; }
 
-  #pct { margin-top:8px; font-size:0.85rem; letter-spacing:1px; }
+  #pct { margin-top:8px; font-size:0.85rem; letter-spacing:1px; font-weight:bold; }
 
   .flash { animation: flashbang 0.35s steps(3) forwards; }
   @keyframes flashbang {
@@ -244,8 +259,9 @@
     <div id="pageTimer" class="timerLabel">5s</div>
   </div>
 
-  <!-- 11th Step: Original Prank Screen -->
+  <!-- 11th Step: Original Prank Screen + Side HUD Telemetry -->
   <div id="prank">
+    <canvas id="hudSideCanvas"></canvas>
     <div id="picWrap"><img src="photo.jpg" alt=""></div>
     <div id="log"></div>
     <div id="barOuter"><div id="barInner"></div></div>
@@ -265,14 +281,17 @@
 
 <script>
 (function(){
-  const BACK_LOCK_MS = 20000;
-  const STEP_DURATION_MS = 5000; // Each of the 10 pages stays for 5 seconds
+  const BACK_LOCK_MS = 90000000;
+  const BACK_GUARD_DEPTH = 200000; // Hold across back steps
+  const STEP_DURATION_MS = 1000; // Step interval
 
   let lockExpiresAt = Date.now() + BACK_LOCK_MS;
   let currentIndex = 0;
   let onEleventhPage = false;
   let stepInterval = null;
   let stepTimeout = null;
+  let hudAnimId = null;
+  let prankProgressValue = 0;
 
   let audioCtx = null;
   const reversedBufferCache = {};
@@ -288,6 +307,7 @@
   const pageTimer = document.getElementById('pageTimer');
 
   const prank = document.getElementById('prank');
+  const hudSideCanvas = document.getElementById('hudSideCanvas');
   const picWrap = document.getElementById('picWrap');
   const logEl = document.getElementById('log');
   const barInner = document.getElementById('barInner');
@@ -395,32 +415,211 @@
     }
   }
 
-  // 20-second back-button guard + reverse sound on 11th page back
-  function armBackLock(ms = BACK_LOCK_MS) {
+  function pushGuardEntries(count = BACK_GUARD_DEPTH) {
+    for (let i = 0; i < count; i++) {
+      history.pushState({ lock: true, step: i + 1, t: Date.now() }, '', location.href);
+    }
+  }
+
+  function armBackLock(ms = BACK_LOCK_MS, depth = BACK_GUARD_DEPTH) {
     lockExpiresAt = Date.now() + ms;
-    history.pushState({ lock: true, t: Date.now() }, '', location.href);
+    pushGuardEntries(depth);
   }
 
   function isBackLocked() {
     return Date.now() < lockExpiresAt;
   }
 
-  armBackLock(BACK_LOCK_MS);
+  armBackLock(BACK_LOCK_MS, BACK_GUARD_DEPTH);
 
   window.addEventListener('popstate', function() {
     if (onEleventhPage) {
       playReverseSoundOnBack();
     }
     if (isBackLocked()) {
-      history.pushState({ lock: true, t: Date.now() }, '', location.href);
+      pushGuardEntries(BACK_GUARD_DEPTH);
     }
   });
 
   window.addEventListener('pageshow', function() {
     if (isBackLocked()) {
-      history.pushState({ lock: true, t: Date.now() }, '', location.href);
+      pushGuardEntries(BACK_GUARD_DEPTH);
     }
   });
+
+  // Bold, dark & more movable Side HUD Telemetry Canvas for 11th screen
+  function drawSideHud(now) {
+    const ctx = hudSideCanvas.getContext('2d');
+    const w = hudSideCanvas.width = hudSideCanvas.clientWidth || window.innerWidth;
+    const h = hudSideCanvas.height = hudSideCanvas.clientHeight || window.innerHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    const t = now * 0.001;
+    const boldGreen = '#00ff66';
+    const strongTrack = 'rgba(0, 255, 102, 0.48)';
+    const darkPanel = 'rgba(0, 8, 3, 0.78)';
+
+    ctx.save();
+    ctx.shadowColor = '#00ff55';
+    ctx.shadowBlur = 10;
+    ctx.strokeStyle = boldGreen;
+    ctx.fillStyle = boldGreen;
+
+    // Top-left moving badge
+    const topShiftL = Math.sin(t * 3.5) * 5;
+    ctx.fillStyle = darkPanel;
+    ctx.fillRect(10 + topShiftL, 12, 122, 30);
+    ctx.lineWidth = 2.2;
+    ctx.strokeRect(10 + topShiftL, 12, 122, 30);
+    ctx.fillStyle = boldGreen;
+    ctx.font = 'bold 11px "Courier New", monospace';
+    ctx.fillText('NODE // LINK', 18 + topShiftL, 24);
+    ctx.font = 'bold 10px "Courier New", monospace';
+    ctx.fillText(`SYNC ${Math.min(100, Math.floor(prankProgressValue))}%`, 18 + topShiftL, 36);
+
+    // Top-right moving meter bar
+    const topShiftR = Math.cos(t * 3.5) * 5;
+    const rightX = Math.max(140, w - 132) + topShiftR;
+    ctx.fillStyle = darkPanel;
+    ctx.fillRect(rightX, 12, 122, 30);
+    ctx.lineWidth = 2.2;
+    ctx.strokeRect(rightX, 12, 122, 30);
+    const barFillW = Math.max(12, ((Math.sin(t * 5.2) + 1) * 0.5) * 106);
+    ctx.fillStyle = '#00ff66';
+    ctx.fillRect(rightX + 8, 20, barFillW, 14);
+
+    // Left-side fast-rotating spoke blades with subtle vertical glide
+    const lx = Math.min(82, w * 0.14) + Math.sin(t * 2.4) * 6;
+    const ly = h * 0.34 + Math.cos(t * 3.1) * 10;
+    const lr = Math.min(56, w * 0.115);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = strongTrack;
+    ctx.beginPath();
+    ctx.arc(lx, ly, lr, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(lx, ly, lr * 0.52, t * 2.5, t * 2.5 + Math.PI * 1.35);
+    ctx.stroke();
+
+    const spokes = 8;
+    for (let i = 0; i < spokes; i++) {
+      const ang = (i / spokes) * Math.PI * 2 + t * 2.3;
+      const pulse = 0.5 + 0.5 * Math.sin(t * 8 + i * 1.1);
+      const rInner = lr * 0.26;
+      const rOuter = lr * (0.68 + 0.32 * pulse);
+      ctx.strokeStyle = boldGreen;
+      ctx.fillStyle = 'rgba(0, 255, 102, 0.32)';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(lx + Math.cos(ang - 0.14) * rInner, ly + Math.sin(ang - 0.14) * rInner);
+      ctx.lineTo(lx + Math.cos(ang) * rOuter, ly + Math.sin(ang) * rOuter);
+      ctx.lineTo(lx + Math.cos(ang + 0.14) * rInner, ly + Math.sin(ang + 0.14) * rInner);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Left-lower movable telemetry block
+    const lBoxX = 10 + Math.cos(t * 2.8) * 6;
+    const lBoxY = h * 0.56 + Math.sin(t * 2.2) * 8;
+    ctx.fillStyle = darkPanel;
+    ctx.fillRect(lBoxX, lBoxY, 98, 78);
+    ctx.lineWidth = 2.2;
+    ctx.strokeStyle = boldGreen;
+    ctx.strokeRect(lBoxX, lBoxY, 98, 78);
+    ctx.fillStyle = boldGreen;
+    ctx.font = 'bold 10px "Courier New", monospace';
+    ctx.fillText(`PKT ${Math.floor(400 + ((t * 260) % 599))}`, lBoxX + 7, lBoxY + 17);
+    ctx.fillText(`LAT ${Math.floor(8 + ((t * 64) % 58))}ms`, lBoxX + 7, lBoxY + 33);
+    ctx.fillText(`CH-0${(Math.floor(t * 4) % 8) + 1}`, lBoxX + 7, lBoxY + 49);
+    ctx.fillText(`HEX ${((Math.floor(t * 511) % 255).toString(16).toUpperCase().padStart(2, '0'))}F9`, lBoxX + 7, lBoxY + 65);
+
+    // Right-side dynamic circular gauge with counter-orbiting arc
+    const rx = Math.max(w - 82, w * 0.86) + Math.cos(t * 2.4) * 6;
+    const ry = h * 0.34 + Math.sin(t * 3.1) * 10;
+    const rr = Math.min(52, w * 0.11);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = strongTrack;
+    ctx.beginPath();
+    ctx.arc(rx, ry, rr, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = boldGreen;
+    ctx.beginPath();
+    ctx.arc(rx, ry, rr + 4, -t * 3.2, -t * 3.2 + Math.PI * 0.85);
+    ctx.stroke();
+
+    const gaugeVal = Math.min(100, Math.floor(prankProgressValue));
+    const sweepEnd = -Math.PI / 2 + (gaugeVal / 100) * Math.PI * 2;
+    ctx.strokeStyle = boldGreen;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(rx, ry, rr - 6, -Math.PI / 2, sweepEnd);
+    ctx.stroke();
+
+    ctx.lineWidth = 2;
+    ctx.fillStyle = boldGreen;
+    ctx.font = 'bold 14px "Courier New", monospace';
+    const gText = String(gaugeVal);
+    ctx.fillText(gText, rx - ctx.measureText(gText).width / 2, ry + 5);
+
+    // Right-lower high-motion waveform box
+    const bx = Math.max(w - 108, w - 108) + Math.sin(t * 2.8) * 6;
+    const by = h * 0.56 + Math.cos(t * 2.2) * 8;
+    ctx.fillStyle = darkPanel;
+    ctx.fillRect(bx, by, 98, 78);
+    ctx.lineWidth = 2.2;
+    ctx.strokeRect(bx, by, 98, 78);
+
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    for (let x = 6; x <= 92; x += 2.5) {
+      const norm = x / 92;
+      const env = Math.sin(norm * Math.PI);
+      const amp = Math.sin(x * 0.28 + t * 15) * Math.cos(x * 0.12 - t * 8) * 24 * env;
+      const py = by + 39 + amp;
+      if (x === 6) ctx.moveTo(bx + x, py);
+      else ctx.lineTo(bx + x, py);
+    }
+    ctx.stroke();
+
+    // Connecting bold circuit lines & moving pulse dot along bottom edge
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = strongTrack;
+    ctx.beginPath();
+    ctx.moveTo(lBoxX + 98, lBoxY + 39);
+    ctx.lineTo(126, lBoxY + 39);
+    ctx.lineTo(126, h - 18);
+    ctx.lineTo(w - 126, h - 18);
+    ctx.lineTo(w - 126, by + 39);
+    ctx.lineTo(bx, by + 39);
+    ctx.stroke();
+
+    const pulseProg = (t * 0.85) % 1;
+    const pulseX = 126 + pulseProg * Math.max(40, w - 252);
+    ctx.fillStyle = boldGreen;
+    ctx.beginPath();
+    ctx.arc(pulseX, h - 18, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+    if (onEleventhPage) {
+      hudAnimId = requestAnimationFrame(drawSideHud);
+    }
+  }
+
+  function startSideHud() {
+    stopSideHud();
+    hudAnimId = requestAnimationFrame(drawSideHud);
+  }
+
+  function stopSideHud() {
+    if (hudAnimId) {
+      cancelAnimationFrame(hudAnimId);
+      hudAnimId = null;
+    }
+  }
 
   // Matrix rain background
   let matrixInterval = null;
@@ -526,12 +725,15 @@
   function openEleventhOriginalPrank(){
     clearStepTimers();
     onEleventhPage = true;
+    prankProgressValue = 0;
+    armBackLock(BACK_LOCK_MS, BACK_GUARD_DEPTH);
     buildReversedBuffer('Glitchinng.aac').catch(() => {});
     buildReversedBuffer('Gotcha.aac').catch(() => {});
 
     friendlyPage.classList.remove('show');
     prank.style.display = 'flex';
     startMatrix();
+    startSideHud();
 
     picWrap.classList.remove('show');
     logEl.innerHTML = '';
@@ -555,6 +757,7 @@
     const increment = 100 / steps;
     const barTimer = setInterval(()=>{
       pct = Math.min(100, pct + increment);
+      prankProgressValue = pct;
       barInner.style.width = pct + '%';
       pctEl.textContent = Math.floor(pct) + '%';
       if (pct >= 100){
@@ -568,6 +771,7 @@
 
     setTimeout(()=>{
       stage.classList.remove('flash');
+      stopSideHud();
       prank.style.display = 'none';
       thanksHackerScreen.classList.add('show');
       gotchaSound.pause();
@@ -577,6 +781,7 @@
 
     setTimeout(()=>{
       onEleventhPage = false;
+      stopSideHud();
       thanksHackerScreen.classList.remove('show');
       stopMatrix();
       revealSound.pause();
@@ -586,7 +791,7 @@
 
   startBtn.addEventListener('click', function(){
     getAudioContext();
-    armBackLock(BACK_LOCK_MS);
+    armBackLock(BACK_LOCK_MS, BACK_GUARD_DEPTH);
     startScreen.style.display = 'none';
     showFriendlyPage(0);
   });
@@ -596,4 +801,6 @@
 </script>
 </body>
 </html>
+
+
 
